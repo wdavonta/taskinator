@@ -5,6 +5,8 @@ var tasksToDoEl = document.querySelector("#tasks-to-do");
 var tasksInProgressEl = document.querySelector("#tasks-in-progress");
 var tasksCompletedEl = document.querySelector("#tasks-completed");
 
+var tasks = [];
+
 var taskFormHandler = function(event) {
   event.preventDefault();
   var taskNameInput = document.querySelector("input[name='task-name']").value;
@@ -21,17 +23,12 @@ var taskFormHandler = function(event) {
   else {
     var taskDataObj = {
       name: taskNameInput,
-      type: taskTypeInput
-    };
+      type: taskTypeInput,
+      status: "to do"
+    }
 
   createTaskEl(taskDataObj);
 }
-
-  // package up data as an object
-  var taskDataObj = {
-    name: taskNameInput,
-    type: taskTypeInput
-  };
 
   // check if input values are empty strings
   if (!taskNameInput || !taskTypeInput) {
@@ -61,8 +58,16 @@ var createTaskEl = function(taskDataObj) {
 
   tasksToDoEl.appendChild(listItemEl);
 
+  taskDataObj.id = taskIdCounter;
+
+  tasks.push(taskDataObj); 
+
+  saveTasks();
+
   // increase task counter for next unique id
   taskIdCounter++;
+  console.log(taskDataObj);
+  console.log(taskDataObj.status);
 };
 
 var createTaskActions = function(taskId) {
@@ -132,6 +137,20 @@ var taskButtonHandler = function(event) {
 var deleteTask = function(taskId) {
   var taskSelected = document.querySelector(".task-item[data-task-id='" + taskId + "']");
   taskSelected.remove();
+    // create new array to hold updated list of tasks
+  var updatedTaskArr = [];
+
+  // loop through current tasks
+  for (var i = 0; i < tasks.length; i++) {
+    // if tasks[i].id doesn't match the value of taskId, let's keep that task and push it into the new array
+    if (tasks[i].id !== parseInt(taskId)) {
+      updatedTaskArr.push(tasks[i]);
+    }
+    saveTasks();
+}
+
+// reassign tasks array to be the same as updatedTaskArr
+tasks = updatedTaskArr;
 };
 
 var editTask = function(taskId) {
@@ -154,6 +173,15 @@ formEl.setAttribute("data-task-id", taskId);
 
 var completeEditTask = function(taskName, taskType, taskId) {
   console.log(taskName, taskType, taskId);
+
+  // loop through tasks array and task object with new content
+  for (var i = 0; i < tasks.length; i++) {
+  if (tasks[i].id === parseInt(taskId)) {
+    tasks[i].name = taskName;
+    tasks[i].type = taskType;
+  }
+  saveTasks()
+}
 };
 
 var taskStatusChangeHandler = function(event) {
@@ -174,9 +202,15 @@ var taskStatusChangeHandler = function(event) {
   else if (statusValue === "completed") {
     tasksCompletedEl.appendChild(taskSelected);
   }
+  // update task's in tasks array
+  for (var i = 0; i < tasks.length; i++) {
+    if (tasks[i].id === parseInt(taskId)) {
+      tasks[i].status = statusValue;
+    }
+  }
+  console.log(tasks);
+  saveTasks();
 };
-
-
 
 var dragTaskHandler = function(event) {
   var taskId = event.target.getAttribute("data-task-id");
@@ -192,7 +226,6 @@ var dropZoneDragHandler = function(event) {
     event.preventDefault();
     taskListEl.setAttribute("style", "background: rgba(68, 233, 255, 0.7); border-style: dashed;");
 
-    
   }
 };
 
@@ -212,18 +245,21 @@ var dropTaskHandler = function(event) {
   else if (statusType === "tasks-completed") {
     statusSelectEl.selectedIndex = 2;
   }
-  
-  dropZoneEl.appendChild(draggableElement);
+  saveTasks()
   dropZoneEl.removeAttribute("style");
+  dropZoneEl.appendChild(draggableElement);
 };
 
 var dragLeaveHandler = function(event) {
   var taskListEl = event.target.closest(".task-list");
-if (taskListEl) {
-  taskListEl.removeAttribute("style");
-}
+  if (taskListEl) {
+    taskListEl.removeAttribute("style");
+  }
 }
 
+var saveTasks = function() {
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
 
 pageContentEl.addEventListener("click", taskButtonHandler);
 pageContentEl.addEventListener("change", taskStatusChangeHandler);
@@ -231,8 +267,6 @@ pageContentEl.addEventListener("dragstart", dragTaskHandler);
 pageContentEl.addEventListener("dragover", dropZoneDragHandler);
 pageContentEl.addEventListener("drop", dropTaskHandler);
 pageContentEl.addEventListener("dragleave", dragLeaveHandler);
-
-
 
 
 
